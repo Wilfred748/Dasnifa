@@ -1,6 +1,5 @@
 using System;
 using SharpPcap;
-using SharpPcap.Tunneling;
 using SharpPcap.LibPcap;
 using PacketDotNet;
 using System.Net.NetworkInformation;
@@ -45,12 +44,21 @@ namespace SharpPcap
             int i = Convert.ToInt32(Console.ReadLine());
             ICaptureDevice device = devices[i];
 
-            device.OnPacketArrival += Device_OnPacketArrival();
+            device.OnPacketArrival += Device_OnPacketArrival;
+            
 
             int readTimeoutMilliseconds = 1000;
-            device.Open(DeviceModes.Promiscuous, readTimeoutMilliseconds);
+            device.Open(DeviceMode.Promiscuous, readTimeoutMilliseconds);
 
-            Console.WriteLine("-- Listening on {0}, enter pa parar....", device.Description);
+            //para filtrar ip y puerto
+            string filter = "128.116.102.4 443";
+            device.Filter = filter;
+
+            Console.WriteLine();
+            Console.WriteLine("-- The following tcpdump filter will be applied: \"{0}\"",
+                filter);
+            Console.WriteLine("-- Listening on {0}, hit 'Enter' to stop...",
+                device.Description);
 
             device.StartCapture();
 
@@ -90,7 +98,7 @@ namespace SharpPcap
         var tcpPacket = new TcpPacket(tcpSourcePort, tcpDestinationPort);
             //IP
         var ipSourceAddress = System.Net.IPAddress.Parse("10.0.0.253");
-        var ipDestinationAddress = System.Net.IPAddress.Parse("142.250.217.206");
+        var ipDestinationAddress = System.Net.IPAddress.Parse("128.116.102.4");
         var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress);
             //MAC
         var sourceHwAddress = "74:e5:0b:d6:2a:72";
@@ -98,7 +106,7 @@ namespace SharpPcap
         var destinationHwAddress = "04-7D-7B-67-C3-48";
         var ethernetDestinationHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(destinationHwAddress);
 
-        var ethernetPacket = new EthernetPacket(ethernetSourceHwAddress, ethernetDestinationHwAddress, EthernetType.None);
+        var ethernetPacket = new EthernetPacket(ethernetSourceHwAddress, ethernetDestinationHwAddress, EthernetPacketType.None);
 
         ipPacket.PayloadPacket = tcpPacket;
         ethernetPacket.PayloadPacket = ipPacket;
@@ -116,35 +124,9 @@ namespace SharpPcap
         
         static void Device_OnPacketArrival(object sender, CaptureEventArgs e)
         {
-        
-            var packetLength = e.Packet.Data.Length;
-            Console.WriteLine($"Paquete capturado. Longitud: {packetLength} bytes");
-            /*ICaptureDevice device = (ICaptureDevice)sender;
-
-            string deviceDescription = device.Description;
-            PhysicalAddress deviceMacAddress = device.MacAddress;
-
-            // Acceder a los datos del paquete capturado
-            int packetLength = e.Packet.Data.Length;
-
-            // Imprimir información sobre el paquete capturado y el dispositivo
-            Console.WriteLine($"Paquete capturado en el dispositivo '{deviceDescription}'. Longitud: {packetLength} bytes");
-
-
             DateTime time = e.Packet.Timeval.Date;
             int len = e.Packet.Data.Length;
             Console.WriteLine("{0}:{1}:{2},{3} Len={4}", time.Hour, time.Minute, time.Second, time.Millisecond, len);
-        
-
-            Packet packet = null;
-
-            while((packet=device.GetNextPacket()) != null )
-            {
-                // Prints the time and length of each received packet
-                DateTime time = packet.PcapHeader.Date;
-                int len = packet.PcapHeader.PacketLength;
-                Console.WriteLine("{0}:{1}:{2},{3} Len={4}", time.Hour, time.Minute, time.Second, time.Millisecond, len);
-            }*/
         }
         
 #endregion
