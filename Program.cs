@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using SharpPcap;
 using SharpPcap.LibPcap;
 using PacketDotNet;
@@ -17,7 +17,7 @@ namespace SharpPcap
         static void Main(string[] args)
         {
             PackTraffic();
-            Interfaces();
+            
 
             //define una variable que sirve para enlistar los servicios
             CaptureDeviceList devices = CaptureDeviceList.Instance; 
@@ -47,18 +47,18 @@ namespace SharpPcap
             device.OnPacketArrival += Device_OnPacketArrival;
             
 
-            int readTimeoutMilliseconds = 1000;
+            int readTimeoutMilliseconds = 5000;
             device.Open(DeviceMode.Promiscuous, readTimeoutMilliseconds);
-
+            
             //para filtrar ip y puerto
-            string filter = "128.116.102.4 443";
+            string filter = "dst host 142.250.189.142";
             device.Filter = filter;
 
             Console.WriteLine();
-            Console.WriteLine("-- The following tcpdump filter will be applied: \"{0}\"",
-                filter);
-            Console.WriteLine("-- Listening on {0}, hit 'Enter' to stop...",
-                device.Description);
+            Console.WriteLine("-- The following tcpdump filter will be applied: \"{0}\"", filter);
+            Console.WriteLine("-- Listening on {0}, hit 'Enter' to stop...", device.Description);
+            
+            Interfaces();
 
             device.StartCapture();
 
@@ -97,11 +97,11 @@ namespace SharpPcap
         ushort tcpDestinationPort = 443;
         var tcpPacket = new TcpPacket(tcpSourcePort, tcpDestinationPort);
             //IP
-        var ipSourceAddress = System.Net.IPAddress.Parse("10.0.0.253");
-        var ipDestinationAddress = System.Net.IPAddress.Parse("128.116.102.4");
+        var ipSourceAddress = System.Net.IPAddress.Parse("10.0.0.104");
+        var ipDestinationAddress = System.Net.IPAddress.Parse("142.250.189.142");
         var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress);
             //MAC
-        var sourceHwAddress = "74:e5:0b:d6:2a:72";
+        var sourceHwAddress = "74-e5-0b-d6-2a-72";
         var ethernetSourceHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(sourceHwAddress);
         var destinationHwAddress = "04-7D-7B-67-C3-48";
         var ethernetDestinationHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(destinationHwAddress);
