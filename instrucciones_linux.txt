@@ -1,0 +1,52 @@
+Desde Linux:
+    Asegurar de tener SDK 6.0.412 y runtime 6.0.28
+    Ser usuario root
+    Asegurar que LD_LIBRARY_PATH tenga: usr/lib/x86_64-linux-gnu/wine/x86_64-unix
+    De no ser asi, desde root: export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/wine/x86_64-unix:$LD_LIBRARY_PATH
+  
+  
+Mi dotnet --info:
+    .NET SDK:
+     Version:           8.0.202
+     Commit:            25674bb2f4
+     Workload version:  8.0.200-manifests.4e94be9c
+    
+    Runtime Environment:
+     OS Name:     debian
+     OS Version:  6.0
+     OS Platform: Linux
+     RID:         linux-x64
+     Base Path:   /usr/share/dotnet/sdk/8.0.202/
+    
+    .NET workloads installed:
+    There are no installed workloads to display.
+    
+    Host:
+      Version:      8.0.3
+      Architecture: x64
+      Commit:       9f4b1f5d66
+    
+    .NET SDKs installed:
+      6.0.412 [/usr/share/dotnet/sdk]
+      8.0.202 [/usr/share/dotnet/sdk]
+    
+    .NET runtimes installed:
+      Microsoft.AspNetCore.App 6.0.20 [/usr/share/dotnet/shared/Microsoft.AspNetCore.App]
+      Microsoft.AspNetCore.App 8.0.3 [/usr/share/dotnet/shared/Microsoft.AspNetCore.App]
+      Microsoft.NETCore.App 6.0.28 [/usr/share/dotnet/shared/Microsoft.NETCore.App]
+      Microsoft.NETCore.App 8.0.3 [/usr/share/dotnet/shared/Microsoft.NETCore.App]
+    
+    Other architectures found:
+      None
+    
+    Environment variables:
+      Not set
+    
+    global.json file:
+      Not found
+    
+    Learn more:
+      https://aka.ms/dotnet/info
+    
+    Download .NET:
+      https://aka.ms/dotnet/download
