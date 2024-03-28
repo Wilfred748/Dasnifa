@@ -3,6 +3,7 @@ using SharpPcap;
 using SharpPcap.LibPcap;
 using PacketDotNet;
 using System.Net.NetworkInformation;
+using System.Net;
 
 
 
@@ -48,10 +49,19 @@ namespace SharpPcap
             
 
             int readTimeoutMilliseconds = 5000;
-            device.Open(DeviceMode.Promiscuous, readTimeoutMilliseconds);
+            try
+            {
+                device.Open(DeviceMode.Promiscuous, readTimeoutMilliseconds);
+            }
+            catch (DeviceNotReadyException ex)
+            {
+                
+                Console.WriteLine("Error al abrir el dispositivo de captura: " + ex.Message);
+                return;
+            }
             
             //para filtrar ip y puerto
-            string filter = "dst host 142.250.189.142";
+            string filter = "";
             device.Filter = filter;
 
             Console.WriteLine();
@@ -66,9 +76,7 @@ namespace SharpPcap
 
             device.StopCapture();
 
-            device.Close();
-            
-            
+            device.Close();   
         }
 
 #region Interfaces MAC
@@ -82,10 +90,12 @@ namespace SharpPcap
             }
 
             Console.WriteLine("Interfaces de red disponibles:");
-            for (int i = 0; i < devices.Count; i++)
+            /*for (int i = 0; i < devices.Count; i++)
             {
                 Console.WriteLine($"[{i + 1}] {devices[i].Description} (MAC: {devices[i].MacAddress})");
-            }
+            }*/
+            foreach(ICaptureDevice dev in devices)
+            Console.WriteLine("{0}\n", dev.ToString());
         
         }
 #endregion 
@@ -97,8 +107,8 @@ namespace SharpPcap
         ushort tcpDestinationPort = 443;
         var tcpPacket = new TcpPacket(tcpSourcePort, tcpDestinationPort);
             //IP
-        var ipSourceAddress = System.Net.IPAddress.Parse("10.0.0.104");
-        var ipDestinationAddress = System.Net.IPAddress.Parse("142.250.189.142");
+        var ipSourceAddress = IPAddress.Any;
+        var ipDestinationAddress = IPAddress.Any;
         var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress);
             //MAC
         var sourceHwAddress = "74-e5-0b-d6-2a-72";
@@ -114,7 +124,7 @@ namespace SharpPcap
         Console.WriteLine(ethernetPacket.ToString());
 
         byte[] packetBytes = ethernetPacket.Bytes;
-        Console.WriteLine(packetBytes);
+        Console.WriteLine(packetBytes + "\n");
 
 
         }
@@ -124,14 +134,27 @@ namespace SharpPcap
         
         static void Device_OnPacketArrival(object sender, CaptureEventArgs e)
         {
-            DateTime time = e.Packet.Timeval.Date;
+            /*DateTime time = e.Packet.Timeval.Date;
             int len = e.Packet.Data.Length;
-            Console.WriteLine("{0}:{1}:{2},{3} Len={4}", time.Hour, time.Minute, time.Second, time.Millisecond, len);
+            Console.WriteLine("{0}:{1}:{2},{3} Len={4}", time.Hour, time.Minute, time.Second, time.Millisecond, len);*/
+            Packet packet = Packet.ParsePacket(e.Packet.LinkLayerType, e.Packet.Data);
+            if (packet is EthernetPacket ethernetPacket)
+            {
+                if (ethernetPacket.PayloadPacket is IpPacket ipPacket)
+                {
+                    string sourceAddress = ipPacket.SourceAddress.ToString();
+                    string destinationAddress = ipPacket.DestinationAddress.ToString();
+                    DateTime time = e.Packet.Timeval.Date;
+                    int len = e.Packet.Data.Length;
+                    Console.WriteLine("{0}:{1}:{2},{3} SourceIP={4}, DestinationIP={5}, Len={6}", 
+                        time.Hour, time.Minute, time.Second, time.Millisecond, sourceAddress, destinationAddress, len);
+                }
+            }
         }
-        
+    }
 #endregion
 
 
-    }
+    
 }
 
