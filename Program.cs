@@ -1,22 +1,28 @@
-using System;
+﻿using System;
 using SharpPcap;
 using SharpPcap.LibPcap;
 using PacketDotNet;
 using System.Net.NetworkInformation;
 using System.Net;
+using MySql.Data.MySqlClient;
 
 
-
+  
 namespace SharpPcap
 {
+    
     class HIDS
-    {        
+    {   
         static void Main()
         {
+            
             Console.WriteLine("Alerta, se necesita ser root para ejecutar el programa en us totalidad!");
             string ver = Version.VersionString;
             string dotnet = Environment.Version.ToString();
             Console.WriteLine("Dotnet {0} \n SharpPcap {1} \n \n", dotnet, ver);
+
+            //Conectar a BD
+            
             
             //Define una variable que sirve para enlistar los servicios.
             CaptureDeviceList devices = CaptureDeviceList.Instance; 
@@ -67,7 +73,7 @@ namespace SharpPcap
             //puerto 443 porque es el usado para pags web con protocolo HTTPS.
             // filter = "{protocolo} port {no. puerto}";
             //Si se deja vacio, va a agarrar todo el trafico correspondiente.
-            string filter = "tcp";
+            string filter = "tcp port 443";
             device.Filter = filter;
 
             //Mostrar en pantalla el servicio elegido. 
@@ -159,6 +165,17 @@ namespace SharpPcap
                     string alert = "";
                     int sourcePort = 0;
                     int destinationPort = 0;
+                    int len = e.Packet.Data.Length;                    
+
+                    var sourceMACaddr = "";
+                    var destMACaddr = "";
+
+                    DateTime hora = e.Packet.Timeval.Date;
+                    //UTC-4
+                    TimeZoneInfo zonaHoraria = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+                    //
+                    DateTime horaUTCmenos4 = TimeZoneInfo.ConvertTime(hora, zonaHoraria);
+                    //string horaFinal = "{0} {1}:{2}:{3}:{4}", horaUTCmenos4 ;
     
                     string protocol = ipPacket.Protocol.ToString();                    
                      
@@ -174,12 +191,44 @@ namespace SharpPcap
                         sourcePort = udpPacket.SourcePort;
                         destinationPort = udpPacket.DestinationPort;
                     }
+                    else if (ipPacket.PayloadPacket is EthernetPacket ethernetpacket)
+                    {
+                        sourceMACaddr = ethernetpacket.SourceHwAddress.ToString();
+                        destMACaddr = ethernetpacket.DestinationHwAddress.ToString();
+                    }
+                    else if (ipPacket.PayloadPacket is ARPPacket aRPPacket)
+                    {
+                        sourceMACaddr = aRPPacket.SenderHardwareAddress.ToString();
+                        destMACaddr = aRPPacket.TargetHardwareAddress.ToString();
+                    }
+
 
                     //Asignacion de los colores declarados.
-                    if (destinationAddress == ip.ToString() || sourceAddress == ip.ToString())
+                    if (destinationAddress == ip.ToString() && sourceAddress == "10.0.0.149" )
                     {
                         ColorRed(destinationAddress);
-                        alert = "Alerta, alguien ha entrado a Roblox!";
+                        alert = "Alerta, alguien ha entrado a Roblox!";                        
+                        
+                        using var conn = new MySqlConnection("server=localhost;port=3306;database=alertas;uid=;password=;");
+                        conn.Open();
+                        
+                        string insertDB = "INSERT into alertas(fecha, IPorigen, Puertoorigen, MACorigen, IpDestino, PuertoDestino, MACdest, longitud, protocolo, alerta) VALUES(@horaUTCmenos4, @sourceAddress, @sourcePort, @sourceMACaddr, @destinationAddress, @destinationPort, @destMACaddr , @len, @protocol, @alert)";
+                        var cmd = new MySqlCommand(insertDB, conn);
+                        
+                        cmd.Parameters.AddWithValue("@horaUTCmenos4", horaUTCmenos4);
+                        cmd.Parameters.AddWithValue("@sourceAddress", sourceAddress);
+                        cmd.Parameters.AddWithValue("@sourcePort", sourcePort);
+                        cmd.Parameters.AddWithValue("@sourceMACaddr", sourceMACaddr);
+                        cmd.Parameters.AddWithValue("@destinationAddress", destinationAddress );
+                        cmd.Parameters.AddWithValue("@destinationPort", destinationPort);
+                        cmd.Parameters.AddWithValue("@destMACaddr", destMACaddr);
+                        cmd.Parameters.AddWithValue("@len", len );
+                        cmd.Parameters.AddWithValue("@protocol", protocol);
+                        cmd.Parameters.AddWithValue("@alert", alert );
+                        cmd.Prepare();
+
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
                     }
                     
                     else if (sourceAddress == "10.0.0.1")
@@ -196,15 +245,30 @@ namespace SharpPcap
                         ColorNormal(destinationAddress);
                     }
 
-                    //Output para los paquetes.
-                    DateTime time = e.Packet.Timeval.Date;
-                    int len = e.Packet.Data.Length;
-                    Console.WriteLine("{0}:{1}:{2},{3} SourceIP={4}, sourcePort={7}, DestinationIP={5}, DestinationPort={8} Len={6}, protocol={9} {10}", 
-                        time.Hour, time.Minute, time.Second, time.Millisecond, sourceAddress, destinationAddress, len, sourcePort, destinationPort, protocol, alert);
+                //Output para los paquetes.
+
+                    Console.WriteLine("{0}:{1}:{2},{3} SourceIP={4}, sourcePort={7}, MACOrig={11} DestinationIP={5}, DestinationPort={8},  MACDest={12},  Len={6}, protocol={9} {10}", 
+                    horaUTCmenos4.Hour, horaUTCmenos4.Minute, horaUTCmenos4.Second, horaUTCmenos4.Millisecond, sourceAddress, destinationAddress, len, sourcePort, destinationPort, protocol, alert, sourceMACaddr, destMACaddr);
+                    
+                    
                     
                 }
             }
         }
+#endregion
+
+#region DB???
+
+    public static void DatabaseConn()
+    {
+        string cursor = "server=localhost;port=3306;database=alertas;uid=;password=;";   
+        using var conn = new MySqlConnection(cursor);
+
+        conn.Open();
+            //Console.WriteLine("Connectado.");
+            
+        }
+
 #endregion
     }
 
