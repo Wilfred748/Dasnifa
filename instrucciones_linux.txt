@@ -2,10 +2,13 @@ LINUX:
     - Asegurar de tener SDK 6.0.412 y runtime 6.0.28.
     - Ser usuario root.
     - Asegurar que se tiene el PacketDotNet instalado (creo que se instala junto al sharppcap).
+    - Asegurar que MySQL esta corriendo en phpMyAdmin (yo use xampp)
 Comandos a tener en cuenta:
 - Desde root: export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/wine/x86_64-unix:$LD_LIBRARY_PATH
 - Para MySql.Data: dotnet add package MySql.Data --version 8.3.0
 - Para Sharppcap: dotnet add package SharpPcap --version 4.4.0 
+- Al finalizar, usar el comando 'dotnet restore' para restaurar los paquetes.
+- En la terminal, usar 'dotnet run' desde root para ejecutar el programa.
   
 Mi dotnet --info:
     .NET SDK:
