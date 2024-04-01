@@ -8,7 +8,7 @@ Comandos a tener en cuenta:
 - Para Sharppcap: dotnet add package SharpPcap --version 4.4.0 
 - Al finalizar, usar el comando 'dotnet restore' para restaurar los paquetes.
 
-Evidentemente, tomar en cuenta que la base de datos corre en phpMyAdmin atraves de Xampp. Recomendablemente ejecutar MySQL a traves de xampp o de alguna forma que salga en el puerto 3306.
+Evidentemente, tomar en cuenta que la base de datos corre en phpMyAdmin atraves de Xampp. Recomendablemente ejecutar MySQL a traves de xampp o de alguna forma que salga en el puerto 3306. Para la passwd en el programa por ahora hay que asignarle una y asignar un usuario.
   
 mi dotnet --info:
     .NET SDK:
