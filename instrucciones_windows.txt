@@ -6,3 +6,56 @@ Comandos a tener en cuenta:
 - Para MySql.Data: dotnet add package MySql.Data --version 8.3.0
 - Para Sharppcap: dotnet add package SharpPcap --version 4.4.0 
   
+mi dotnet --info:
+    .NET SDK:
+     Version:           8.0.101
+     Commit:            6eceda187b
+     Workload version:  8.0.100-manifests.30fce108
+    
+    Runtime Environment:
+     OS Name:     Windows
+     OS Version:  10.0.19045
+     OS Platform: Windows
+     RID:         win-x64
+     Base Path:   C:\Program Files\dotnet\sdk\8.0.101\
+    
+    .NET workloads installed:
+     Workload version: 8.0.100-manifests.30fce108
+     [wasm-tools-net6]
+       Installation Source: VS 17.8.34525.116
+       Manifest Version:    8.0.1/8.0.100
+       Manifest Path:       C:\Program Files\dotnet\sdk-manifests\8.0.100\microsoft.net.workload.mono.toolchain.net6\8.0.1\WorkloadManifest.json
+       Install Type:              Msi
+    
+    
+    Host:
+      Version:      8.0.1
+      Architecture: x64
+      Commit:       bf5e279d92
+    
+    .NET SDKs installed:
+      8.0.101 [C:\Program Files\dotnet\sdk]
+    
+    .NET runtimes installed:
+      Microsoft.AspNetCore.App 6.0.26 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
+      Microsoft.AspNetCore.App 8.0.1 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
+      Microsoft.NETCore.App 6.0.26 [C:\Program Files\dotnet\shared\Microsoft.NETCore.App]
+      Microsoft.NETCore.App 8.0.1 [C:\Program Files\dotnet\shared\Microsoft.NETCore.App]
+      Microsoft.WindowsDesktop.App 6.0.26 [C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App]
+      Microsoft.WindowsDesktop.App 8.0.1 [C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App]
+    
+    Other architectures found:
+      x86   [C:\Program Files (x86)\dotnet]
+        registered at [HKLM\SOFTWARE\dotnet\Setup\InstalledVersions\x86\InstallLocation]
+    
+    Environment variables:
+      Not set
+    
+    global.json file:
+      Not found
+    
+    Learn more:
+      https://aka.ms/dotnet/info
+    
+    Download .NET:
+      https://aka.ms/dotnet/download
