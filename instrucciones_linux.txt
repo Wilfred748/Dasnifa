@@ -1,9 +1,11 @@
-Desde Linux:
-    Asegurar de tener SDK 6.0.412 y runtime 6.0.28
-    Ser usuario root
-    Asegurar que LD_LIBRARY_PATH tenga: usr/lib/x86_64-linux-gnu/wine/x86_64-unix
-    De no ser asi, desde root: export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/wine/x86_64-unix:$LD_LIBRARY_PATH
-  
+LINUX:
+    - Asegurar de tener SDK 6.0.412 y runtime 6.0.28.
+    - Ser usuario root.
+    - Asegurar que se tiene el PacketDotNet instalado (creo que se instala junto al sharppcap).
+Comandos a tener en cuenta:
+- Desde root: export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/wine/x86_64-unix:$LD_LIBRARY_PATH
+- Para MySql.Data: dotnet add package MySql.Data --version 8.3.0
+- Para Sharppcap: dotnet add package SharpPcap --version 4.4.0 
   
 Mi dotnet --info:
     .NET SDK:
@@ -50,3 +52,4 @@ Mi dotnet --info:
     
     Download .NET:
       https://aka.ms/dotnet/download
+
