@@ -9,11 +9,12 @@ using Org.BouncyCastle.Asn1;
 
 
 
-namespace SharpPcap
+namespace HIDS
 {
 
     class HIDS
     {
+        static string alertaPersonalizada;
         static void Main()
         {
             Console.WriteLine("Alerta, al usar linux se necesita ser root para ejecutar el programa en su totalidad!");
@@ -43,11 +44,12 @@ namespace SharpPcap
                 Console.WriteLine("{0}\n", dev.ToString());
             }
 
-
             //Para elegir un servicio de la lista.
             Console.Write("Elige un numero de la lista: ");
             int i = Convert.ToInt32(Console.ReadLine());
             ICaptureDevice dispositivo = dispositivos[i];
+
+            
 
             //
             dispositivo.OnPacketArrival += capturaPaquetes;
@@ -69,16 +71,28 @@ namespace SharpPcap
                 return;
             }
 
+            ValorAlerta();
+
             //Para filtrar protocolo, si no hay filtro se muestra demasiado UDP y no vale la pena porque no se ve na'.
             //puerto 443 porque es el usado para pags web con protocolo HTTPS.
             // filter = "{protocolo} port {no. puerto}";
             //Si se deja vacio, va a agarrar todo el trafico correspondiente.
-            string filtros = "";//Libreria captura trafico.
+            Console.Write("Indique el puerto a filtrar: ");
+            string puerto = Console.ReadLine();
+            if (puerto != "")
+            {
+                puerto = "port " + puerto;
+            }
+
+            Console.Write("Indique el protocolo a filtrar (udp o tcp, 'Enter' para ambos):");
+            string protocolo = Console.ReadLine();
+
+            string filtros = $"{protocolo} {puerto}";
+            Console.WriteLine(filtros);
             dispositivo.Filter = filtros;
 
             dispositivo.StartCapture();
 
-            //Agarra tecla para termianr.
             Console.ReadKey();
 
             dispositivo.StopCapture();
@@ -125,29 +139,38 @@ namespace SharpPcap
 
 #region Un lio == output de packet
         static void capturaPaquetes(object sender, CaptureEventArgs e)
-        {
+        {           
             Packet packet = Packet.ParsePacket(e.Packet.LinkLayerType, e.Packet.Data);
             if (packet is EthernetPacket ethernetPacket)
             {
+                //Console.Write("Diga la URL a alertar (ej: 'example.com'): ");
+                //string dominio = Console.ReadLine();
+               
+
                 if (ethernetPacket.PayloadPacket is IpPacket ipPacket)
                 {
                     //URL a alertar, agarra y hace proceso a traves del DNS para conseguir la IP.
-                    var url = "https://www.roblox.com/";
+
+                    string url = "https://www.exploit-db.com/";
                     Uri myUri = new Uri(url);
                     var ip = Dns.GetHostAddresses(myUri.Host)[0];
 
                     //Definir variables como puertos, direcciones, y alerta en caso de ser necesaria.
                     string direccionOrigen = ipPacket.SourceAddress.ToString();
                     var direccionDestino = ipPacket.DestinationAddress.ToString();
-                    string alerta = "";
+
+
                     int puertoOrigen = 0;
                     int puertoDestino = 0;
                     int len = e.Packet.Data.Length;
+                    
+                    //string alerta = Alerta();
 
                     var sourceMACaddr = "";
                     var destMACaddr = "";
+                    string alerta = alertaPersonalizada;
 
-                    var iplocal = IPlocal();
+                    string iplocal = IPlocal() ;
 
                     DateTime hora = e.Packet.Timeval.Date;
                     //UTC-4
@@ -183,10 +206,10 @@ namespace SharpPcap
 
 
                     //Asignacion de los colores declarados.
-                    if (direccionDestino == ip.ToString() && direccionOrigen == "192.168.114.116")
+                    if (direccionDestino == ip.ToString() && direccionOrigen == iplocal)
                     {
                         ColorRed(direccionDestino);
-                        alerta = "Alerta, alguien ha entrado a Roblox!";
+
 
                         using var conn = new MySqlConnection("server=localhost;port=3306;database=alertas;uid=root;password=;");
                         conn.Open();
@@ -213,15 +236,18 @@ namespace SharpPcap
                     else if (direccionOrigen == "10.0.0.1")
                     {
                         ColorCyan(direccionDestino);
+                        alertaPersonalizada = "";
                     }
 
                     else if (protocol == "TCP")
                     {
                         ColorBlanco(protocol);
+                        alertaPersonalizada = "";
                     }
                     else
                     {
                         ColorNormal(direccionDestino);
+                        alertaPersonalizada = "";
                     }
 
                     //Output para los paquetes.
@@ -237,7 +263,7 @@ namespace SharpPcap
 #region DB???
 
         //Crear una base de datos en caso de que no exista
-        public static void DatabaseCrea()
+        static void DatabaseCrea()
         {
             string cursor = "server=localhost;port=3306;uid=root;password=;";
             using var conn = new MySqlConnection(cursor);
@@ -310,15 +336,21 @@ namespace SharpPcap
         #endregion
 
         //Agarrar la direccion ip del sistema para tenerla como IP local
+        
         static string IPlocal()
-        {
-            var redInterfaz = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (var networkInterface in redInterfaz)
+        {  
+            string wirelessAdapterName = "Wi-Fi";
+
+            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+            foreach (var networkInterface in interfaces)
             {
-                if (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+                if (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 &&
+                    networkInterface.Name == wirelessAdapterName)
                 {
-                    var propi = networkInterface.GetIPProperties();
-                    foreach (var address in propi.UnicastAddresses)
+                    var ipProperties = networkInterface.GetIPProperties();
+
+                    foreach (var address in ipProperties.UnicastAddresses)
                     {
                         if (address.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                         {
@@ -329,6 +361,15 @@ namespace SharpPcap
             }
             return null;
         }
+
+        static void ValorAlerta()
+        {
+            Console.Write("Diga un valor para las alertas: ");
+            alertaPersonalizada = Console.ReadLine(); // Pedir un valor para la variable y asignarlo
+        }
+
+
+
     }
 
 }
