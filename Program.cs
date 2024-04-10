@@ -14,7 +14,7 @@ namespace HIDS
 
     class HIDS
     {
-        static string alertaPersonalizada;
+        static string alertaPersonalizada = "";
         static void Main()
         {
             Console.WriteLine("Alerta, al usar linux se necesita ser root para ejecutar el programa en su totalidad!");
@@ -71,7 +71,8 @@ namespace HIDS
                 return;
             }
 
-            ValorAlerta();
+            HIDS Hids = new HIDS();
+            Hids.ValorAlerta();
 
             //Para filtrar protocolo, si no hay filtro se muestra demasiado UDP y no vale la pena porque no se ve na'.
             //puerto 443 porque es el usado para pags web con protocolo HTTPS.
@@ -209,6 +210,7 @@ namespace HIDS
                     if (direccionDestino == ip.ToString() && direccionOrigen == iplocal)
                     {
                         ColorRed(direccionDestino);
+                        //alerta = alertaPersonalizada;
 
 
                         using var conn = new MySqlConnection("server=localhost;port=3306;database=alertas;uid=root;password=;");
@@ -236,18 +238,18 @@ namespace HIDS
                     else if (direccionOrigen == "10.0.0.1")
                     {
                         ColorCyan(direccionDestino);
-                        alertaPersonalizada = "";
+                        alerta = "";
                     }
 
                     else if (protocol == "TCP")
                     {
                         ColorBlanco(protocol);
-                        alertaPersonalizada = "";
+                        alerta = "";
                     }
                     else
                     {
                         ColorNormal(direccionDestino);
-                        alertaPersonalizada = "";
+                        alerta = "";
                     }
 
                     //Output para los paquetes.
@@ -362,7 +364,7 @@ namespace HIDS
             return null;
         }
 
-        static void ValorAlerta()
+        public void ValorAlerta()
         {
             Console.Write("Diga un valor para las alertas: ");
             alertaPersonalizada = Console.ReadLine(); // Pedir un valor para la variable y asignarlo
