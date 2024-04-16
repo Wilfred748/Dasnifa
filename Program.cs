@@ -6,21 +6,22 @@ using System.Net.NetworkInformation;
 using System.Net;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Asn1;
+using System.Security.Policy;
 
 
 
 namespace HIDS
 {
-
     class HIDS
     {
         static string alertaPersonalizada = "";
+
         static void Main()
         {
             Console.WriteLine("Alerta, al usar linux se necesita ser root para ejecutar el programa en su totalidad!");
             MostrarVersiones();
 
-            Console.WriteLine(IPlocal());
+            Console.WriteLine($"Direccion IPv4 actual: {IPlocal()} \n");
 
             //Conectar a BD
             DatabaseCrea();
@@ -44,25 +45,25 @@ namespace HIDS
                 Console.WriteLine("{0}\n", dev.ToString());
             }
 
-            //Para elegir un servicio de la lista.
             Console.Write("Elige un numero de la lista: ");
             int i = Convert.ToInt32(Console.ReadLine());
             ICaptureDevice dispositivo = dispositivos[i];
 
+            Console.Write("Diga una URL para alertar (ej: https://example.com/ o https://www.example.com/) : ");
+            string url = Console.ReadLine();
+            Uri myUri = new Uri(url);
+            var ip = Dns.GetHostAddresses(myUri.Host)[0];
+
+            dispositivo.OnPacketArrival += (sender, e) => capturaPaquetes(sender, e, ip);
             
-
-            //
-            dispositivo.OnPacketArrival += capturaPaquetes;
-
-            //Indica tiempo de espera antes de recoger paquetes al ser elegido.
-            int TiempoEsperaMilisec = 2000;
+            int TiempoEsperaMilisec = 500;
 
             //En caso de fallo al agarrar .
             try
             {
                 //Promiscuo == agarra todo lo que vea en la red.
                 //Normal == agarra solo lo que va dirigido al dispositivo en cuestion
-                dispositivo.Open(DeviceMode.Normal, TiempoEsperaMilisec);
+                dispositivo.Open(DeviceMode.Promiscuous, TiempoEsperaMilisec);
             }
             catch (DeviceNotReadyException ex)
             {
@@ -78,7 +79,7 @@ namespace HIDS
             //puerto 443 porque es el usado para pags web con protocolo HTTPS.
             // filter = "{protocolo} port {no. puerto}";
             //Si se deja vacio, va a agarrar todo el trafico correspondiente.
-            Console.Write("Indique el puerto a filtrar: ");
+            Console.Write("Indique el puerto a filtrar ('Enter' para cualquiera): ");
             string puerto = Console.ReadLine();
             if (puerto != "")
             {
@@ -92,30 +93,27 @@ namespace HIDS
             Console.WriteLine(filtros);
             dispositivo.Filter = filtros;
 
+            //Mostrar en pantalla el servicio elegido. 
+            Console.WriteLine("\nServicio: " + dispositivo);
+            //Detalles.
+            Console.WriteLine("-- El siguiente valor va a ser aplicado para el filtro: \"{0}\"", filtros);
+            Console.WriteLine("-- Capturando trafico de: {0}, presionar 'Enter' para finalizar.", dispositivo.Name);        
+            
             dispositivo.StartCapture();
 
             Console.ReadKey();
 
             dispositivo.StopCapture();
 
-            dispositivo.Close();
-            
-
-            //Mostrar en pantalla el servicio elegido. 
-            Console.WriteLine("\nServicio: " + dispositivo);
-            //Detalles.
-            Console.WriteLine("-- El siguiente valor va a ser aplicado para el filtro: \"{0}\"", filtros);
-            Console.WriteLine("-- Capturando trafico de: {0}, presionar 'Enter' para finalizar.", dispositivo.Name);
-
-            
+            dispositivo.Close();            
         }
 
 #region metodos para color para paquete
         static void ColorRed(string value)
         {
             Console.ForegroundColor = ConsoleColor.DarkRed;
-
         }
+        
         static void ColorCyan(string value)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -125,6 +123,7 @@ namespace HIDS
         {
             Console.ForegroundColor = ConsoleColor.Green;
         }
+        
         static void ColorBlanco(string value)
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -135,43 +134,30 @@ namespace HIDS
         {
             string versionSharpPcap = SharpPcap.Version.VersionString;
             string versionDotNet = Environment.Version.ToString();
-            Console.WriteLine("Dotnet {0} \n SharpPcap {1} \n", versionDotNet, versionSharpPcap);
+            Console.WriteLine("Dotnet {0} \nSharpPcap {1} \n", versionDotNet, versionSharpPcap);
         }
 
 #region Un lio == output de packet
-        static void capturaPaquetes(object sender, CaptureEventArgs e)
-        {           
+        static void capturaPaquetes(object sender, CaptureEventArgs e, IPAddress ip)
+        {
             Packet packet = Packet.ParsePacket(e.Packet.LinkLayerType, e.Packet.Data);
             if (packet is EthernetPacket ethernetPacket)
-            {
-                //Console.Write("Diga la URL a alertar (ej: 'example.com'): ");
-                //string dominio = Console.ReadLine();
-               
-
+            {                    
                 if (ethernetPacket.PayloadPacket is IpPacket ipPacket)
-                {
-                    //URL a alertar, agarra y hace proceso a traves del DNS para conseguir la IP.
-
-                    string url = "https://www.exploit-db.com/";
-                    Uri myUri = new Uri(url);
-                    var ip = Dns.GetHostAddresses(myUri.Host)[0];
-
+                {                    
                     //Definir variables como puertos, direcciones, y alerta en caso de ser necesaria.
                     string direccionOrigen = ipPacket.SourceAddress.ToString();
                     var direccionDestino = ipPacket.DestinationAddress.ToString();
 
-
                     int puertoOrigen = 0;
                     int puertoDestino = 0;
-                    int len = e.Packet.Data.Length;
-                    
-                    //string alerta = Alerta();
+                    int len = e.Packet.Data.Length;                    
 
                     var sourceMACaddr = "";
                     var destMACaddr = "";
                     string alerta = alertaPersonalizada;
 
-                    string iplocal = IPlocal() ;
+                    string iplocal = IPlocal();
 
                     DateTime hora = e.Packet.Timeval.Date;
                     //UTC-4
@@ -205,13 +191,10 @@ namespace HIDS
                         destMACaddr = aRPPacket.TargetHardwareAddress.ToString();
                     }
 
-
                     //Asignacion de los colores declarados.
-                    if (direccionDestino == ip.ToString() && direccionOrigen == iplocal)
+                    if (direccionDestino == ip.ToString() && direccionOrigen == iplocal || direccionDestino == iplocal && direccionOrigen == ip.ToString())
                     {
                         ColorRed(direccionDestino);
-                        //alerta = alertaPersonalizada;
-
 
                         using var conn = new MySqlConnection("server=localhost;port=3306;database=alertas;uid=root;password=;");
                         conn.Open();
@@ -253,17 +236,14 @@ namespace HIDS
                     }
 
                     //Output para los paquetes.
-
                     Console.WriteLine("{0}:{1}:{2},{3} IP-Origen={4}, Puerto-de-Origen={7}, MACOrig={11} IP-Destino={5}, puerto-de-Destino={8},  MACDest={12},  Longitud={6}, protocolo={9} {10}",
                     horaUTCmenos4.Hour, horaUTCmenos4.Minute, horaUTCmenos4.Second, horaUTCmenos4.Millisecond, direccionOrigen, direccionDestino, len, puertoOrigen, puertoDestino, protocol, alerta, sourceMACaddr, destMACaddr);
-
                 }
             }
         }
-        #endregion
+#endregion
 
-#region DB???
-
+#region DB
         //Crear una base de datos en caso de que no exista
         static void DatabaseCrea()
         {
@@ -273,7 +253,7 @@ namespace HIDS
             try
             {
                 conn.Open();
-                Console.WriteLine("Connectado.");
+                Console.WriteLine("Connectado a la base de datos. \n");
 
                 string checkDBinfo = $"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'alertas';";
 
@@ -300,7 +280,7 @@ namespace HIDS
 
                         MySqlCommand command = new MySqlCommand(createTable, conn);
                         command.ExecuteNonQuery();
-                    Console.WriteLine("Tabla alertas creadas");
+                    Console.WriteLine("Tabla 'alertas' creadas");
                     
                 }
                 catch (MySqlException ex)
@@ -331,14 +311,11 @@ namespace HIDS
                 Console.WriteLine("erroi: {0}", ex.Message);
                 throw;
             }
-
             Console.ReadKey();
         }
-
         #endregion
 
-        //Agarrar la direccion ip del sistema para tenerla como IP local
-        
+        //Agarrar la direccion ip del sistema para tenerla como IP local        
         static string IPlocal()
         {  
             string wirelessAdapterName = "Wi-Fi";
@@ -363,15 +340,10 @@ namespace HIDS
             }
             return null;
         }
-
         public void ValorAlerta()
         {
             Console.Write("Diga un valor para las alertas: ");
-            alertaPersonalizada = Console.ReadLine(); // Pedir un valor para la variable y asignarlo
+            alertaPersonalizada = Console.ReadLine();
         }
-
-
-
     }
-
 }
