@@ -16,7 +16,6 @@ namespace HIDS
 
         static void Main()
         {
-            Espacio();
             Dasnifa();
 
             ColorRed("");
@@ -44,6 +43,7 @@ namespace HIDS
 
             //En caso de que si hayan servicios, los enlista con un loop.
             Console.WriteLine("Servicios: ");
+
             //Loop para mostrar todos los servicios.
             foreach (ICaptureDevice dev in dispositivos)
             {
@@ -214,7 +214,6 @@ namespace HIDS
                             destMACaddr = aRPPacket.TargetHardwareAddress.ToString();
                             break;
                         default:
-                            // Handle any other packet types if needed
                             break;
                     }
 
@@ -384,10 +383,6 @@ namespace HIDS
             alertaPersonalizada = Console.ReadLine();
         }
 
-        static void Espacio()
-        {
-            Console.WriteLine("\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-        }
 
         static void Dasnifa()
         {
