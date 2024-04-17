@@ -18,8 +18,11 @@ namespace HIDS
         {
             Espacio();
             Dasnifa();
+
+            ColorRed("");
+            Console.Write("[!] ");
             ColorAmarillo("");
-            Console.WriteLine("[!] Alerta, al usar linux se necesita ser root para ejecutar el programa en su totalidad!");            
+            Console.WriteLine("Alerta, al usar linux se necesita ser root para ejecutar el programa en su totalidad!");            
             MostrarVersiones();
 
             ColorBlanco("");
