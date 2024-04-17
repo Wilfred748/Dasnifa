@@ -77,6 +77,6 @@ Contributions are welcome. If you wish to contribute to this project, please ope
 ## License
 The project is licensed under the [MIT](https://choosealicense.com/licenses/mit/). License.
 
-License I Have No idea (IHNI)
+License IHNI (I Have No idea)
 
 
